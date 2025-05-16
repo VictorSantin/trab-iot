@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <title>Temperatura e Umidade</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h2>Temperatura e Umidade (tempo real)</h2>
+    <canvas id="myChart" width="600" height="400"></canvas>
+
+    <script>
+        const ctx = document.getElementById('myChart').getContext('2d');
+
+        let chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Temperatura (°C)',
+                        borderColor: 'red',
+                        data: [],
+                        fill: false,
+                    },
+                    {
+                        label: 'Umidade (%)',
+                        borderColor: 'blue',
+                        data: [],
+                        fill: false,
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    y: { min: 0 }
+                }
+            }
+        });
+
+        // Função para buscar dados do servidor e atualizar gráfico
+        async function atualizarDados() {
+            try {
+                const response = await fetch('/dados_json');
+                const dados = await response.json();
+
+                // Adiciona valores ao gráfico (mantém só os últimos 10)
+                if(dados.Temperatura !== null && dados.Umidade !== null){
+                    const now = new Date().toLocaleTimeString();
+
+                    if(chart.data.labels.length >= 10){
+                        chart.data.labels.shift();
+                        chart.data.datasets[0].data.shift();
+                        chart.data.datasets[1].data.shift();
+                    }
+
+                    chart.data.labels.push(now);
+                    chart.data.datasets[0].data.push(dados.Temperatura);
+                    chart.data.datasets[1].data.push(dados.Umidade);
+
+                    chart.update();
+                }
+            } catch (error) {
+                console.error('Erro ao buscar dados:', error);
+            }
+        }
+
+        // Atualiza a cada 5 segundos
+        setInterval(atualizarDados, 5000);
+        atualizarDados();
+    </script>
+</body>
+</html>
